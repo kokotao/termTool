@@ -1,5 +1,5 @@
 export const appConfig = {
-  version: '0.1.3',
+  version: '0.1.4',
   author: 'albert_luo',
   authorEmail: '480199976@qq.com',
   website: 'https://github.com/albertluo', // Example link

@@ -1,6 +1,6 @@
 {
   "name": "Termtool",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "跨平台 SSH/SFTP 管理工具",
   "main": "dist-electron/main.js",
