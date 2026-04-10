@@ -1,6 +1,6 @@
 {
   "name": "Termtool",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "description": "跨平台 SSH/SFTP 管理工具",
   "main": "dist-electron/main.js",
@@ -116,6 +116,17 @@
       "target": [
         {
           "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "AppImage",
           "arch": [
             "x64"
           ]
