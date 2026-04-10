@@ -47,15 +47,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Validate macOS signing secrets
-        if: matrix.platform.name == 'macos'
-        run: |
-          test -n "${{ secrets.CSC_LINK }}" || (echo "Missing secret: CSC_LINK" && exit 1)
-          test -n "${{ secrets.CSC_KEY_PASSWORD }}" || (echo "Missing secret: CSC_KEY_PASSWORD" && exit 1)
-          test -n "${{ secrets.APPLE_ID }}" || (echo "Missing secret: APPLE_ID" && exit 1)
-          test -n "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" || (echo "Missing secret: APPLE_APP_SPECIFIC_PASSWORD" && exit 1)
-          test -n "${{ secrets.APPLE_TEAM_ID }}" || (echo "Missing secret: APPLE_TEAM_ID" && exit 1)
-
       - name: Install Dependencies
         run: npm ci
 
