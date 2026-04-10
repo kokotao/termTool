@@ -63,5 +63,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openPath: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.LOCAL_FS.OPEN, { path }),
     startDrag: (path: string) => ipcRenderer.send(IPC_CHANNELS.LOCAL_FS.START_DRAG, { path }),
     getTempDir: () => ipcRenderer.invoke(IPC_CHANNELS.LOCAL_FS.GET_TEMP_DIR),
+  },
+  app: {
+    getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP.GET_VERSION),
+    checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.APP.CHECK_FOR_UPDATES),
+    downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.APP.DOWNLOAD_UPDATE),
+    installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.APP.INSTALL_UPDATE),
+    onUpdateStatus: (callback: (event: any, payload: { status: string; version?: string; progress?: number; message?: string }) => void) => {
+      const subscription = (_: any, payload: any) => callback(_, payload);
+      ipcRenderer.on(IPC_CHANNELS.APP.UPDATE_STATUS, subscription);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.APP.UPDATE_STATUS, subscription);
+    },
   }
 })

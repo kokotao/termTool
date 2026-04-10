@@ -9,6 +9,7 @@ import electronSquirrelStartup from 'electron-squirrel-startup'
 import { setupSSHService } from './services/ssh'
 import { setupSFTPService } from './services/sftp'
 import { setupLocalFsService } from './services/localFs'
+import { setupUpdaterService } from './services/updater'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -38,6 +39,7 @@ const createWindow = () => {
   setupSSHService(mainWindow);
   setupSFTPService();
   setupLocalFsService();
+  setupUpdaterService(mainWindow);
 
   // 开发环境走 Vite DevServer；生产环境加载构建后的静态文件
   if (process.env.NODE_ENV === 'development') {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { appConfig } from '@/config';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SidebarProps {
   activeTab: string;
@@ -16,8 +16,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [showAbout, setShowAbout] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'none' | 'checking' | 'latest' | 'available' | 'error'>('none');
+  const [updateStatus, setUpdateStatus] = useState<'none' | 'checking' | 'latest' | 'available' | 'downloading' | 'downloaded' | 'error'>('none');
   const [latestVersion, setLatestVersion] = useState<string>('');
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
   const navItems = [
     { id: 'connections', icon: Server, label: t('sidebar.connections') },
@@ -32,28 +33,72 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
     i18n.changeLanguage(newLang);
   };
 
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.app.onUpdateStatus((_, payload) => {
+      if (payload.version) {
+        setLatestVersion(payload.version);
+      }
+
+      switch (payload.status) {
+        case 'checking':
+          setUpdateStatus('checking');
+          setCheckingUpdate(true);
+          break;
+        case 'available':
+          setUpdateStatus('available');
+          setCheckingUpdate(false);
+          break;
+        case 'latest':
+          setUpdateStatus('latest');
+          setCheckingUpdate(false);
+          break;
+        case 'downloading':
+          setUpdateStatus('downloading');
+          setCheckingUpdate(false);
+          setDownloadProgress(payload.progress ?? 0);
+          break;
+        case 'downloaded':
+          setUpdateStatus('downloaded');
+          setCheckingUpdate(false);
+          setDownloadProgress(100);
+          break;
+        case 'error':
+          setUpdateStatus('error');
+          setCheckingUpdate(false);
+          break;
+        default:
+          break;
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const checkUpdate = async () => {
     setCheckingUpdate(true);
     setUpdateStatus('checking');
-    
-    try {
-      const response = await fetch('https://api.github.com/repos/albertLuo/termTool/releases/latest');
-      const data = await response.json();
-      const version = data.tag_name.replace('v', '');
-      const currentVersion = appConfig.version;
-      
-      setLatestVersion(version);
-      
-      if (version > currentVersion) {
-        setUpdateStatus('available');
-      } else {
-        setUpdateStatus('latest');
-      }
-    } catch (error) {
+    setDownloadProgress(0);
+
+    const result = await window.electronAPI.app.checkForUpdates();
+    if (!result.success) {
       setUpdateStatus('error');
-    } finally {
       setCheckingUpdate(false);
     }
+  };
+
+  const downloadUpdate = async () => {
+    setUpdateStatus('downloading');
+    setDownloadProgress(0);
+    const result = await window.electronAPI.app.downloadUpdate();
+    if (!result.success) {
+      setUpdateStatus('error');
+    }
+  };
+
+  const installUpdate = async () => {
+    await window.electronAPI.app.installUpdate();
   };
 
   return (
@@ -199,8 +244,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   <RefreshCw className="h-4 w-4" />
                   <span>New version available: v{latestVersion}</span>
                 </div>
+                <Button
+                  onClick={downloadUpdate}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Download Update
+                </Button>
                 <a 
-                  href={`https://github.com/albertLuo/termTool/releases/tag/v${latestVersion}`}
+                  href={`${appConfig.repository}/releases/tag/v${latestVersion}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
@@ -208,6 +260,27 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   <ExternalLink className="h-3 w-3" />
                   View Release
                 </a>
+              </div>
+            )}
+
+            {updateStatus === 'downloading' && (
+              <div className="flex flex-col items-center gap-2 text-sm text-primary">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Downloading update... {downloadProgress.toFixed(0)}%</span>
+                </div>
+              </div>
+            )}
+
+            {updateStatus === 'downloaded' && (
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Update downloaded: v{latestVersion}</span>
+                </div>
+                <Button onClick={installUpdate} className="w-full">
+                  Restart and Install
+                </Button>
               </div>
             )}
 
