@@ -24,7 +24,7 @@ jobs:
         platform:
           - name: macos
             os: macos-latest
-            build_args: --mac dmg --x64 --arm64
+            build_args: --mac dmg zip --x64 --arm64
             artifact_name: release-macos
           - name: windows
             os: windows-latest
@@ -44,8 +44,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
+
+      - name: Validate macOS signing secrets
+        if: matrix.platform.name == 'macos'
+        run: |
+          test -n "${{ secrets.CSC_LINK }}" || (echo "Missing secret: CSC_LINK" && exit 1)
+          test -n "${{ secrets.CSC_KEY_PASSWORD }}" || (echo "Missing secret: CSC_KEY_PASSWORD" && exit 1)
+          test -n "${{ secrets.APPLE_ID }}" || (echo "Missing secret: APPLE_ID" && exit 1)
+          test -n "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" || (echo "Missing secret: APPLE_APP_SPECIFIC_PASSWORD" && exit 1)
+          test -n "${{ secrets.APPLE_TEAM_ID }}" || (echo "Missing secret: APPLE_TEAM_ID" && exit 1)
 
       - name: Install Dependencies
         run: npm ci
@@ -57,6 +66,11 @@ jobs:
         run: npx electron-builder ${{ matrix.platform.build_args }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

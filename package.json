@@ -74,7 +74,8 @@
     "appId": "com.termtool.app",
     "productName": "termTool",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
@@ -89,10 +90,20 @@
       }
     ],
     "mac": {
+      "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "x64",
             "arm64"
@@ -101,6 +112,7 @@
       ]
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",

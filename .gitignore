@@ -6,5 +6,7 @@ node_modules
 dist
 dist-electron
 release
-build
+build/*
+!build/icon.icns
+!build/icon.ico
 .DS_Store
