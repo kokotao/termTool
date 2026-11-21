@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { appConfig } from '@/config';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface SidebarProps {
   activeTab: string;
@@ -19,6 +20,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [updateStatus, setUpdateStatus] = useState<'none' | 'checking' | 'latest' | 'available' | 'downloading' | 'downloaded' | 'error'>('none');
   const [latestVersion, setLatestVersion] = useState<string>('');
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [currentVersion, setCurrentVersion] = useState(appConfig.version);
+  const [updateError, setUpdateError] = useState('');
+  const updateStatusRef = useRef(updateStatus);
 
   const navItems = [
     { id: 'connections', icon: Server, label: t('sidebar.connections') },
@@ -34,6 +38,29 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   useEffect(() => {
+    let mounted = true;
+    let initialCheckTimeout: number | undefined;
+    let periodicCheckInterval: number | undefined;
+
+    const runAutomaticUpdateCheck = () => {
+      if (!mounted || ['checking', 'available', 'downloading', 'downloaded'].includes(updateStatusRef.current)) {
+        return;
+      }
+
+      updateStatusRef.current = 'checking';
+      setUpdateStatus('checking');
+      setCheckingUpdate(true);
+      void window.electronAPI.app.checkForUpdates().then((result) => {
+        if (!result.success) throw new Error(result.error || 'Failed to check for updates');
+      }).catch((error: unknown) => {
+        if (!mounted) return;
+        updateStatusRef.current = 'error';
+        setUpdateStatus('error');
+        setCheckingUpdate(false);
+        setUpdateError(error instanceof Error ? error.message : 'Failed to check for updates');
+      });
+    };
+
     const unsubscribe = window.electronAPI.app.onUpdateStatus((_, payload) => {
       if (payload.version) {
         setLatestVersion(payload.version);
@@ -41,63 +68,106 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
       switch (payload.status) {
         case 'checking':
+          updateStatusRef.current = 'checking';
           setUpdateStatus('checking');
           setCheckingUpdate(true);
           break;
         case 'available':
+          updateStatusRef.current = 'available';
           setUpdateStatus('available');
           setCheckingUpdate(false);
+          toast.info(`TermTool v${payload.version} is available`, {
+            description: 'Open About to download and install the update.',
+            action: {
+              label: 'View update',
+              onClick: () => setShowAbout(true),
+            },
+            duration: 10000,
+          });
           break;
         case 'latest':
+          updateStatusRef.current = 'latest';
           setUpdateStatus('latest');
           setCheckingUpdate(false);
           break;
         case 'downloading':
+          updateStatusRef.current = 'downloading';
           setUpdateStatus('downloading');
           setCheckingUpdate(false);
           setDownloadProgress(payload.progress ?? 0);
           break;
         case 'downloaded':
+          updateStatusRef.current = 'downloaded';
           setUpdateStatus('downloaded');
           setCheckingUpdate(false);
           setDownloadProgress(100);
           break;
         case 'error':
+          updateStatusRef.current = 'error';
           setUpdateStatus('error');
           setCheckingUpdate(false);
+          setUpdateError(payload.message || 'Unknown update error');
           break;
         default:
           break;
       }
     });
 
+    void (async () => {
+      try {
+        const [version, isPackaged] = await Promise.all([
+          window.electronAPI.app.getVersion(),
+          window.electronAPI.app.isPackaged(),
+        ]);
+        if (!mounted) return;
+        setCurrentVersion(version);
+        if (isPackaged) {
+          initialCheckTimeout = window.setTimeout(runAutomaticUpdateCheck, 1500);
+          periodicCheckInterval = window.setInterval(runAutomaticUpdateCheck, 6 * 60 * 60 * 1000);
+        }
+      } catch (error) {
+        console.error('Failed to initialize update check:', error);
+      }
+    })();
+
     return () => {
+      mounted = false;
+      if (initialCheckTimeout !== undefined) window.clearTimeout(initialCheckTimeout);
+      if (periodicCheckInterval !== undefined) window.clearInterval(periodicCheckInterval);
       unsubscribe();
     };
   }, []);
 
   const checkUpdate = async () => {
     setCheckingUpdate(true);
+    updateStatusRef.current = 'checking';
     setUpdateStatus('checking');
     setDownloadProgress(0);
+    setUpdateError('');
 
     const result = await window.electronAPI.app.checkForUpdates();
     if (!result.success) {
+      updateStatusRef.current = 'error';
       setUpdateStatus('error');
       setCheckingUpdate(false);
+      setUpdateError(result.error || 'Failed to check for updates');
     }
   };
 
   const downloadUpdate = async () => {
+    updateStatusRef.current = 'downloading';
     setUpdateStatus('downloading');
     setDownloadProgress(0);
     const result = await window.electronAPI.app.downloadUpdate();
     if (!result.success) {
+      updateStatusRef.current = 'error';
       setUpdateStatus('error');
+      setUpdateError(result.error || 'Failed to download update');
     }
   };
 
   const installUpdate = async () => {
+    updateStatusRef.current = 'downloaded';
     await window.electronAPI.app.installUpdate();
   };
 
@@ -158,10 +228,10 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           {isExpanded ? (
             <div className="flex items-center justify-center gap-2">
               <Info className="h-3 w-3" />
-              <span>v0.1.0</span>
+              <span>v{currentVersion}</span>
             </div>
           ) : (
-            "v0.1"
+            `v${currentVersion}`
           )}
         </div>
       </div>
@@ -287,7 +357,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             {updateStatus === 'error' && (
               <div className="flex items-center justify-center gap-2 text-sm text-destructive">
                 <XCircle className="h-4 w-4" />
-                <span>Failed to check for updates</span>
+                <span>{updateError || 'Failed to check for updates'}</span>
               </div>
             )}
           </div>

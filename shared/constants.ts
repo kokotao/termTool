@@ -33,6 +33,7 @@ export const IPC_CHANNELS = {
   },
   APP: {
     GET_VERSION: 'app:get-version',
+    IS_PACKAGED: 'app:is-packaged',
     CHECK_FOR_UPDATES: 'app:check-for-updates',
     DOWNLOAD_UPDATE: 'app:download-update',
     INSTALL_UPDATE: 'app:install-update',

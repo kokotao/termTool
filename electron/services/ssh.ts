@@ -73,17 +73,42 @@ export const setupSSHService = (mainWindow: BrowserWindow) => {
       // 主动推送连接状态，便于前端更新 UI
       sendToRenderer(IPC_CHANNELS.SSH.STATUS, { connectionId, status: 'connecting' });
 
-      await client.connect({
+      const connectOptions: Record<string, unknown> = {
         host: config.host,
         port: config.port,
         username: config.username,
-        // 密码在 Store 内可能已加密，这里统一解密后再交给 node-ssh
-        password: decrypt(config.password || ''),
-        tryKeyboard: true,
         readyTimeout: 20000,
         keepaliveInterval: 10000,
-        // privateKey: config.privateKeyPath // TODO: Handle private key auth
-      });
+      };
+
+      switch (config.authType || 'password') {
+        case 'privateKey': {
+          if (!config.privateKeyPath) {
+            throw new Error('Private key path is required');
+          }
+          connectOptions.privateKey = await fs.readFile(config.privateKeyPath, 'utf-8');
+          if (config.passphrase) {
+            connectOptions.passphrase = decrypt(config.passphrase);
+          }
+          break;
+        }
+        case 'agent': {
+          const agent = process.env.SSH_AUTH_SOCK;
+          if (!agent) {
+            throw new Error('SSH_AUTH_SOCK is not set; SSH agent authentication is unavailable');
+          }
+          connectOptions.agent = agent;
+          break;
+        }
+        case 'password':
+        default:
+          // Passwords in the Store may be encrypted; decrypt before passing them to node-ssh.
+          connectOptions.password = decrypt(config.password || '');
+          connectOptions.tryKeyboard = true;
+          break;
+      }
+
+      await client.connect(connectOptions as Parameters<NodeSSH['connect']>[0]);
 
       // Get initial Home Directory
       let homeDir = '';

@@ -80,6 +80,8 @@ export const setupUpdaterService = (mainWindow: BrowserWindow) => {
     return app.getVersion();
   });
 
+  ipcMain.handle(IPC_CHANNELS.APP.IS_PACKAGED, () => app.isPackaged);
+
   ipcMain.handle(IPC_CHANNELS.APP.CHECK_FOR_UPDATES, async () => {
     if (!app.isPackaged) {
       return { success: false, error: 'Updater is only available in packaged app.' };

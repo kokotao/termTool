@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   app: {
     getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.APP.GET_VERSION),
+    isPackaged: () => ipcRenderer.invoke(IPC_CHANNELS.APP.IS_PACKAGED),
     checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.APP.CHECK_FOR_UPDATES),
     downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.APP.DOWNLOAD_UPDATE),
     installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.APP.INSTALL_UPDATE),

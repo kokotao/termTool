@@ -36,6 +36,7 @@ export interface ElectronAPI {
   };
   app: {
     getVersion: () => Promise<string>;
+    isPackaged: () => Promise<boolean>;
     checkForUpdates: () => Promise<{ success: boolean; error?: string }>;
     downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
     installUpdate: () => Promise<{ success: boolean; error?: string }>;
