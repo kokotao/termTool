@@ -6,6 +6,7 @@ const { autoUpdater } = electronUpdater;
 
 let activeMainWindow: BrowserWindow | null = null;
 let isUpdaterServiceInitialized = false;
+let isUpdateDownloaded = false;
 
 const sendUpdateStatus = (payload: Record<string, unknown>) => {
   if (!activeMainWindow || activeMainWindow.isDestroyed() || activeMainWindow.webContents.isDestroyed()) {
@@ -61,6 +62,7 @@ export const setupUpdaterService = (mainWindow: BrowserWindow) => {
   });
 
   autoUpdater.on('update-downloaded', (info) => {
+    isUpdateDownloaded = true;
     sendUpdateStatus({
       status: 'downloaded',
       version: info.version,
@@ -99,6 +101,7 @@ export const setupUpdaterService = (mainWindow: BrowserWindow) => {
       return { success: false, error: 'Updater is only available in packaged app.' };
     }
     try {
+      isUpdateDownloaded = false;
       await autoUpdater.downloadUpdate();
       return { success: true };
     } catch (error: any) {
@@ -110,7 +113,21 @@ export const setupUpdaterService = (mainWindow: BrowserWindow) => {
     if (!app.isPackaged) {
       return { success: false, error: 'Updater is only available in packaged app.' };
     }
-    setImmediate(() => autoUpdater.quitAndInstall());
+    if (!isUpdateDownloaded) {
+      return { success: false, error: 'The update has not finished downloading.' };
+    }
+
+    sendUpdateStatus({ status: 'installing' });
+    setImmediate(() => {
+      try {
+        autoUpdater.quitAndInstall();
+      } catch (error: any) {
+        sendUpdateStatus({
+          status: 'error',
+          message: error?.message || 'Failed to start the update installer.',
+        });
+      }
+    });
     return { success: true };
   });
 };

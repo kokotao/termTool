@@ -40,7 +40,7 @@ export interface ElectronAPI {
     checkForUpdates: () => Promise<{ success: boolean; error?: string }>;
     downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
     installUpdate: () => Promise<{ success: boolean; error?: string }>;
-    onUpdateStatus: (callback: (event: any, payload: { status: string; version?: string; progress?: number; message?: string }) => void) => () => void;
+    onUpdateStatus: (callback: (event: any, payload: { status: 'checking' | 'available' | 'latest' | 'downloading' | 'downloaded' | 'installing' | 'error'; version?: string; progress?: number; message?: string }) => void) => () => void;
   };
   cloud?: {
     uploadConfig: (token: string, config: any) => Promise<void>;

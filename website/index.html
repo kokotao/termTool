@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111512" />
+    <meta
+      name="description"
+      content="termTool 是一款面向开发者的跨平台 SSH 与 SFTP 桌面工作台。集中管理服务器、终端会话和远程文件。"
+    />
+    <meta property="og:title" content="termTool · SSH 工作台" />
+    <meta
+      property="og:description"
+      content="SSH、SFTP 与多台服务器会话，在一个清晰的桌面工作台中完成。"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="./assets/termtool-icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>termTool · SSH 工作台</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="termTool 首页">
+        <img src="./assets/termtool-icon.png" alt="" width="36" height="36" />
+        <span>termTool</span>
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#workflow">工作流</a>
+        <a href="#downloads">下载</a>
+        <a href="https://github.com/kokotao/termTool" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+      <a class="header-download" href="#downloads">获取 termTool <span aria-hidden="true">↓</span></a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="live-dot"></span> SSH / SFTP DESKTOP WORKSPACE</p>
+          <h1 id="hero-title">服务器工作，<br /><span>一处就够。</span></h1>
+          <p class="hero-description">
+            termTool 把 SSH 终端、SFTP 文件和常用主机放在同一个桌面工作台。少切换窗口，多专注手头的事。
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" id="primary-download" href="https://github.com/kokotao/termTool/releases/latest">
+              <span id="primary-download-label">下载 termTool</span>
+              <span aria-hidden="true">↓</span>
+            </a>
+            <a class="button button-quiet" href="https://github.com/kokotao/termTool/releases/latest" target="_blank" rel="noreferrer">
+              所有版本 <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+          <p class="version-line"><span id="latest-version">v0.1.6</span><span class="version-separator">/</span>macOS · Windows · Linux</p>
+        </div>
+
+        <div class="workspace" aria-label="termTool SSH 工作区预览">
+          <div class="workspace-topbar">
+            <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="workspace-title"><img src="./assets/termtool-icon.png" alt="" />termTool</div>
+            <div class="topbar-right"><span class="topbar-label">SSH WORKSPACE</span><span class="topbar-menu" aria-hidden="true">•••</span></div>
+          </div>
+          <div class="workspace-body">
+            <aside class="host-rail" aria-label="服务器列表">
+              <div class="rail-heading">连接 <span>＋</span></div>
+              <div class="host-item host-item-active"><span class="host-status"></span><span><b>production</b><small>203.0.113.18</small></span></div>
+              <div class="host-item"><span class="host-status host-status-muted"></span><span><b>staging</b><small>10.0.4.21</small></span></div>
+              <div class="host-item"><span class="host-status host-status-muted"></span><span><b>database</b><small>10.0.8.13</small></span></div>
+              <div class="rail-divider"></div>
+              <div class="rail-shortcut"><span>▱</span>文件传输</div>
+              <div class="rail-shortcut"><span>⌘</span>密钥管理</div>
+            </aside>
+            <section class="terminal-pane" aria-label="终端窗口">
+              <div class="session-tabs"><div class="session-tab"><span class="host-status"></span> production <span class="tab-close">×</span></div><div class="session-tab session-tab-inactive">staging <span class="tab-close">×</span></div><span class="new-tab">＋</span></div>
+              <div class="terminal-content">
+                <p><span class="term-muted">Last login: Sun Nov 22 08:41:02 2026 from 192.0.2.44</span></p>
+                <p><span class="term-user">deploy@production</span><span class="term-path">:~</span>$ systemctl status nginx</p>
+                <p class="service-line"><span class="service-dot"></span> nginx.service <span class="service-active">active (running)</span></p>
+                <p class="term-muted service-indent">Reverse proxy and web server</p>
+                <p class="service-indent">Loaded: <span class="term-green">loaded</span> (/lib/systemd/system/nginx.service)</p>
+                <p class="service-indent">Main PID: 1428 (nginx)</p>
+                <p class="term-spacer"><span class="term-user">deploy@production</span><span class="term-path">:~</span>$ tail -n 2 /var/log/nginx/access.log</p>
+                <p class="term-muted">203.0.113.24 - - [22/Nov/2026:08:42:15] "GET / HTTP/2.0" 200</p>
+                <p class="term-muted">203.0.113.24 - - [22/Nov/2026:08:42:16] "GET /health HTTP/2.0" 200</p>
+                <p class="term-prompt"><span class="term-user">deploy@production</span><span class="term-path">:~</span>$ <span class="cursor"></span></p>
+              </div>
+              <div class="terminal-status"><span><span class="host-status"></span> 已连接</span><span>SSH · 22</span><span>UTF-8</span></div>
+            </section>
+          </div>
+          <div class="workspace-caption"><span>终端、主机与文件，在一个工作区。</span><span>01 — 03</span></div>
+        </div>
+        <a class="scroll-cue" href="#workflow"><span></span>向下了解</a>
+      </section>
+
+      <section class="workflow section-light" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-intro reveal">
+          <p class="eyebrow eyebrow-dark">01 / 工作流</p>
+          <h2 id="workflow-title">从连接到文件，<br />少一点来回切换。</h2>
+          <p>把日常远程维护要用的工具放到一起，连接状态和操作路径一目了然。</p>
+        </div>
+        <div class="workflow-list">
+          <article class="workflow-row reveal"><span class="row-index">01</span><div><h3>SSH 终端</h3><p>保存常用主机配置，开启多个独立终端会话。</p></div><span class="row-mark" aria-hidden="true">↗</span></article>
+          <article class="workflow-row reveal"><span class="row-index">02</span><div><h3>SFTP 文件管理</h3><p>浏览远程目录、上传和下载文件，减少工具间切换。</p></div><span class="row-mark" aria-hidden="true">↗</span></article>
+          <article class="workflow-row reveal"><span class="row-index">03</span><div><h3>主机与密钥</h3><p>整理服务器连接和 SSH 密钥，在需要时快速找到。</p></div><span class="row-mark" aria-hidden="true">↗</span></article>
+        </div>
+      </section>
+
+      <section class="platform-band" aria-labelledby="platform-title">
+        <div class="platform-copy reveal">
+          <p class="eyebrow">02 / 跨平台</p>
+          <h2 id="platform-title">你的桌面，<br />你的服务器。</h2>
+          <p>为 macOS、Windows 与 Linux 提供桌面安装包。选择对应平台即可开始。</p>
+          <a class="text-link" href="#downloads">查看下载选项 <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="platform-mark reveal" aria-hidden="true">
+          <img src="./assets/termtool-icon.png" alt="" loading="lazy" />
+          <span class="platform-ring platform-ring-one"></span>
+          <span class="platform-ring platform-ring-two"></span>
+          <span class="platform-caption">SSH · SFTP · DESKTOP</span>
+        </div>
+      </section>
+
+      <section class="downloads section-light" id="downloads" aria-labelledby="downloads-title">
+        <div class="download-heading reveal">
+          <div><p class="eyebrow eyebrow-dark">03 / 下载</p><h2 id="downloads-title">开始使用 termTool。</h2></div>
+          <p>当前版本 <strong id="download-version">v0.1.6</strong><br /><span id="release-date">GitHub Releases</span></p>
+        </div>
+        <div class="download-list" id="download-list" aria-live="polite">
+          <a class="download-row" data-asset="mac-arm64" href="https://github.com/kokotao/termTool/releases/download/v0.1.6/termTool-0.1.6-arm64.dmg"><span class="download-platform"><span class="platform-symbol">⌘</span><span><b>macOS</b><small>Apple 芯片 · .dmg</small></span></span><span class="download-action">下载 <span aria-hidden="true">↓</span></span></a>
+          <a class="download-row" data-asset="mac-x64" href="https://github.com/kokotao/termTool/releases/download/v0.1.6/termTool-0.1.6.dmg"><span class="download-platform"><span class="platform-symbol">⌘</span><span><b>macOS</b><small>Intel · .dmg</small></span></span><span class="download-action">下载 <span aria-hidden="true">↓</span></span></a>
+          <a class="download-row" data-asset="windows" href="https://github.com/kokotao/termTool/releases/download/v0.1.6/termTool.Setup.0.1.6.exe"><span class="download-platform"><span class="platform-symbol">⊞</span><span><b>Windows</b><small>x64 · .exe</small></span></span><span class="download-action">下载 <span aria-hidden="true">↓</span></span></a>
+          <a class="download-row" data-asset="linux" href="https://github.com/kokotao/termTool/releases/download/v0.1.6/termTool-0.1.6.AppImage"><span class="download-platform"><span class="platform-symbol">◈</span><span><b>Linux</b><small>x64 · AppImage</small></span></span><span class="download-action">下载 <span aria-hidden="true">↓</span></span></a>
+        </div>
+        <p class="download-note reveal">下载即表示你同意遵守项目的 <a href="https://github.com/kokotao/termTool/blob/main/LICENSE" target="_blank" rel="noreferrer">MIT License</a>。更新说明与历史版本可在 <a href="https://github.com/kokotao/termTool/releases" target="_blank" rel="noreferrer">GitHub Releases</a> 查看。</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand footer-brand" href="#top"><img src="./assets/termtool-icon.png" alt="" width="30" height="30" /><span>termTool</span></a>
+      <p>为远程工作留一个清晰的入口。</p>
+      <div class="footer-links"><a href="https://github.com/kokotao/termTool" target="_blank" rel="noreferrer">GitHub ↗</a><a href="https://github.com/kokotao/termTool/issues" target="_blank" rel="noreferrer">反馈问题 ↗</a><span>© <span id="current-year">2026</span> termTool</span></div>
+    </footer>
+    <script src="./script.js" defer></script>
+  </body>
+</html>

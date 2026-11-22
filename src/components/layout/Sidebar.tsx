@@ -17,12 +17,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const [showAbout, setShowAbout] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'none' | 'checking' | 'latest' | 'available' | 'downloading' | 'downloaded' | 'error'>('none');
+  const [updateStatus, setUpdateStatus] = useState<'none' | 'checking' | 'latest' | 'available' | 'downloading' | 'downloaded' | 'installing' | 'error'>('none');
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [downloadedVersion, setDownloadedVersion] = useState('');
   const [latestVersion, setLatestVersion] = useState<string>('');
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [currentVersion, setCurrentVersion] = useState(appConfig.version);
   const [updateError, setUpdateError] = useState('');
   const updateStatusRef = useRef(updateStatus);
+  const installTimeoutRef = useRef<number | undefined>();
 
   const navItems = [
     { id: 'connections', icon: Server, label: t('sidebar.connections') },
@@ -43,7 +46,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
     let periodicCheckInterval: number | undefined;
 
     const runAutomaticUpdateCheck = () => {
-      if (!mounted || ['checking', 'available', 'downloading', 'downloaded'].includes(updateStatusRef.current)) {
+      if (!mounted || ['checking', 'available', 'downloading', 'downloaded', 'installing'].includes(updateStatusRef.current)) {
         return;
       }
 
@@ -88,6 +91,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         case 'latest':
           updateStatusRef.current = 'latest';
           setUpdateStatus('latest');
+          setDownloadedVersion('');
           setCheckingUpdate(false);
           break;
         case 'downloading':
@@ -99,12 +103,25 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         case 'downloaded':
           updateStatusRef.current = 'downloaded';
           setUpdateStatus('downloaded');
+          setInstallingUpdate(false);
+          setDownloadedVersion(payload.version || latestVersion);
           setCheckingUpdate(false);
           setDownloadProgress(100);
+          break;
+        case 'installing':
+          updateStatusRef.current = 'installing';
+          setUpdateStatus('installing');
+          setInstallingUpdate(true);
+          setCheckingUpdate(false);
           break;
         case 'error':
           updateStatusRef.current = 'error';
           setUpdateStatus('error');
+          if (installTimeoutRef.current !== undefined) {
+            window.clearTimeout(installTimeoutRef.current);
+            installTimeoutRef.current = undefined;
+          }
+          setInstallingUpdate(false);
           setCheckingUpdate(false);
           setUpdateError(payload.message || 'Unknown update error');
           break;
@@ -134,6 +151,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       mounted = false;
       if (initialCheckTimeout !== undefined) window.clearTimeout(initialCheckTimeout);
       if (periodicCheckInterval !== undefined) window.clearInterval(periodicCheckInterval);
+      if (installTimeoutRef.current !== undefined) window.clearTimeout(installTimeoutRef.current);
       unsubscribe();
     };
   }, []);
@@ -167,8 +185,36 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   };
 
   const installUpdate = async () => {
-    updateStatusRef.current = 'downloaded';
-    await window.electronAPI.app.installUpdate();
+    if (installingUpdate) return;
+
+    setInstallingUpdate(true);
+    setUpdateError('');
+    updateStatusRef.current = 'installing';
+    setUpdateStatus('installing');
+    installTimeoutRef.current = window.setTimeout(() => {
+      if (updateStatusRef.current !== 'installing') return;
+      updateStatusRef.current = 'error';
+      setUpdateStatus('error');
+      setInstallingUpdate(false);
+      setUpdateError('The app did not restart. Close TermTool and reopen it to finish the update.');
+    }, 60_000);
+
+    try {
+      const result = await window.electronAPI.app.installUpdate();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to start the update installer.');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to start the update installer.';
+      if (installTimeoutRef.current !== undefined) {
+        window.clearTimeout(installTimeoutRef.current);
+        installTimeoutRef.current = undefined;
+      }
+      updateStatusRef.current = 'error';
+      setUpdateStatus('error');
+      setInstallingUpdate(false);
+      setUpdateError(message);
+    }
   };
 
   return (
@@ -348,16 +394,30 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                   <CheckCircle className="h-4 w-4" />
                   <span>Update downloaded: v{latestVersion}</span>
                 </div>
-                <Button onClick={installUpdate} className="w-full">
+                <Button onClick={installUpdate} disabled={installingUpdate} className="w-full">
                   Restart and Install
                 </Button>
               </div>
             )}
 
+            {updateStatus === 'installing' && (
+              <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 text-sm text-primary">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Preparing update. The app will restart shortly.</span>
+              </div>
+            )}
+
             {updateStatus === 'error' && (
-              <div className="flex items-center justify-center gap-2 text-sm text-destructive">
-                <XCircle className="h-4 w-4" />
-                <span>{updateError || 'Failed to check for updates'}</span>
+              <div className="flex flex-col items-center gap-2 text-sm text-destructive">
+                <div className="flex items-center justify-center gap-2">
+                  <XCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{updateError || 'Failed to check for updates'}</span>
+                </div>
+                {downloadedVersion && (
+                  <Button onClick={installUpdate} variant="outline" disabled={installingUpdate}>
+                    Retry Installation
+                  </Button>
+                )}
               </div>
             )}
           </div>
