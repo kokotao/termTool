@@ -10,6 +10,7 @@ import CryptoJS from 'crypto-js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
+import { watchSshConnection } from './sshLifecycle.js';
 
 const execAsync = promisify(exec);
 
@@ -110,6 +111,23 @@ export const setupSSHService = (mainWindow: BrowserWindow) => {
 
       await client.connect(connectOptions as Parameters<NodeSSH['connect']>[0]);
 
+      let disconnectedStatusSent = false;
+      const notifyDisconnected = () => {
+        const session = sessions.get(connectionId);
+        if (disconnectedStatusSent || session?.client !== client) return;
+        disconnectedStatusSent = true;
+        sessions.delete(connectionId);
+        sendToRenderer(IPC_CHANNELS.SSH.STATUS, { connectionId, status: 'disconnected' });
+      };
+      const connection = client.connection;
+      if (!connection) {
+        throw new Error('SSH connection was not available after connect');
+      }
+      const lifecycle = watchSshConnection(connection, (error: Error | undefined) => {
+        if (error) console.warn(`SSH connection ${connectionId} ended:`, error.message);
+        notifyDisconnected();
+      });
+
       // Get initial Home Directory
       let homeDir = '';
       try {
@@ -119,9 +137,17 @@ export const setupSSHService = (mainWindow: BrowserWindow) => {
         console.warn('Failed to fetch home dir:', e);
       }
 
+      if (lifecycle.isDisconnected()) {
+        throw new Error('SSH connection closed before the shell was ready');
+      }
+
       const rows = Math.max(pty?.rows ?? 24, 5);
       const cols = Math.max(pty?.cols ?? 80, 10);
       const shell = await client.requestShell({ term: 'xterm-256color', rows, cols });
+      if (lifecycle.isDisconnected()) {
+        shell.end();
+        throw new Error('SSH connection closed before the shell was ready');
+      }
 
       // SSH 会话可用：推送 connected，让前端状态灯显示绿色
       sendToRenderer(IPC_CHANNELS.SSH.STATUS, { connectionId, status: 'connected' });
@@ -143,8 +169,7 @@ export const setupSSHService = (mainWindow: BrowserWindow) => {
       });
 
       shell.on('close', () => {
-        sendToRenderer(IPC_CHANNELS.SSH.STATUS, { connectionId, status: 'disconnected' });
-        sessions.delete(connectionId);
+        notifyDisconnected();
       });
 
       shell.stderr?.on('data', (data: Buffer) => {
